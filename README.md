@@ -81,7 +81,7 @@ PartLink is a web-based marketplace that connects buyers of car spare parts with
 ## UI Design
 
 Figma Design:
-https://www.figma.com/design/xFvbtM7asvtV7tBJ2TKIOM/Untitled?node-id=1-3&t=fhcjtSXjdubA53Ei-1
+[https://www.figma.com/design/xFvbtM7asvtV7tBJ2TKIOM/Untitled?node-id=1-3&t=fhcjtSXjdubA53Ei-1](https://www.figma.com/proto/xFvbtM7asvtV7tBJ2TKIOM/NTI-TASK-10?node-id=1-2&starting-point-node-id=1%3A2&t=I2dLUqWNGv51vTsI-1)
 
 ---
 
