@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const productRoutes = require('./routes/productRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/products', productRoutes);
+app.use('/', authRoutes);
 
 // Root route
 app.get('/', (req, res) => {

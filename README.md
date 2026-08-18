@@ -1,95 +1,8 @@
-# PartLink – Online Marketplace for Car Spare Parts
+# entity-module — Product (PartLink)
 
-## Project Description
+Backend module for **PartLink**, an online marketplace connecting buyers and sellers of car spare parts in Egypt. Built with Node.js, Express, and MongoDB (Mongoose).
 
-PartLink is a web-based marketplace that connects buyers of car spare parts with sellers across Egypt. Buyers can search for spare parts by car make, model, year, and category, while sellers can list and manage their products. Administrators manage users, categories, and listings to ensure a secure and organized platform.
-
----
-
-## User Roles
-
-### Admin
-- Manage users
-- Approve or suspend sellers
-- Manage products and categories
-- View and manage all orders
-- Moderate listings
-
-### Seller
-- Create, edit, and delete product listings
-- Upload product images
-- Manage inventory
-- View and process customer orders
-
-### Buyer
-- Register and log in
-- Browse and search products
-- Add products to cart
-- Place orders
-- Track orders
-- Leave reviews and ratings
-
----
-
-## Features (Full Project Scope)
-
-### Authentication
-- Register
-- Login
-- Logout
-- Forgot Password
-- Email Verification
-
-### Authorization
-- Role-based access control
-- Admin Dashboard
-- Seller Dashboard
-- Buyer Dashboard
-- Protected routes
-
-### CRUD Operations
-- Products (Create, Read, Update, Delete)
-- Categories (Create, Read, Update, Delete)
-- Orders (Create, Read, Update, Cancel)
-- Users (Admin Management)
-- Reviews (Create, Read, Delete)
-
-### Image & File Upload
-- User profile images
-- Product images
-- Seller verification documents
-
----
-
-## Main Pages
-
-- Home Page
-- Login Page
-- Register Page
-- Product Listing Page
-- Product Details Page
-- Shopping Cart
-- Buyer Dashboard
-- Seller Dashboard
-- Admin Dashboard
-- Add/Edit Product Page
-- User Management Page
-- Category Management Page
-
----
-
-## UI Design
-
-Figma Design:
-https://www.figma.com/design/xFvbtM7asvtV7tBJ2TKIOM/Untitled?node-id=1-3&t=fhcjtSXjdubA53Ei-1
-
----
-
-## Backend Module Progress: Product (entity-module)
-
-This is the first backend module built toward the full project above, using Node.js, Express, and MongoDB (Mongoose).
-
-### Features Implemented
+## Features Implemented
 
 - Full CRUD for the `Product` entity (Create, Read all, Read one, Update, Delete)
 - **Image upload with Multer** — sellers can attach a product photo when creating or updating a product
@@ -99,7 +12,7 @@ This is the first backend module built toward the full project above, using Node
   - Uploaded images are served statically at `/uploads/<filename>` so they can be viewed directly in the browser or embedded in a frontend `<img>` tag
 - All routes use `async/await` with `try/catch` and return consistent JSON responses
 
-### Entity Chosen: Product
+## Entity Chosen: Product
 
 I chose **Product** because it is the core entity of PartLink — every buyer search, seller listing, order, and review revolves around it. Getting the Product CRUD right first makes it straightforward to layer Category, Order, and User modules on top later.
 
@@ -118,7 +31,7 @@ I chose **Product** because it is the core entity of PartLink — every buyer se
 | `image` | String | Filename of the uploaded product image (set automatically by Multer), null if none |
 | `createdAt` / `updatedAt` | Date | Auto-managed via Mongoose timestamps |
 
-### Routes Summary
+## Routes Summary
 
 Base path: `/products`
 
@@ -132,7 +45,7 @@ Base path: `/products`
 
 All routes use `async/await` with `try/catch` and return JSON in the shape `{ success, data|message }`.
 
-### How to Run Locally
+## How to Run Locally
 
 1. **Install dependencies**
    ```bash
@@ -159,7 +72,7 @@ All routes use `async/await` with `try/catch` and return JSON in the shape `{ su
 4. **Test the API**
    Server runs at `http://localhost:5000`.
 
-### API Usage Examples (Postman)
+## API Usage Examples (Postman)
 
 **Create a product with an image** — `POST http://localhost:5000/products`
 Set the request body type to `form-data` (not raw JSON, since we're sending a file). Add each field as a text key, plus one file key:
@@ -184,8 +97,77 @@ Same as create: use `form-data`, include only the fields you want to change, and
 
 **Delete a product** — `DELETE http://localhost:5000/products/:id`
 
-Screenshots of Postman requests/responses for each route (including the file upload) are in the `/screenshots` folder.
+Screenshots of Postman requests/responses for each route (including the file upload) are in the `/screenshots` folder (add your own after testing locally).
 
-### Next Steps
+## Next Steps
 
-This module will be extended with user authentication (register/login/JWT) and role-based access control (Admin/Seller/Buyer) in a later stage.
+This module will be extended with role-based access on product routes and user profile photos (via Multer) in a later stage.
+
+---
+
+## Backend Module: Authentication (auth-module)
+
+### What This Module Does
+
+Adds a `User` model plus signup/login routes with hashed passwords and JWT-based authentication, so future routes (like `/products`) can be restricted by logged-in user and role.
+
+### User Roles Chosen
+
+- **admin** — manages users, products, and categories
+- **seller** — creates and manages their own product listings
+- **buyer** — browses and orders products (default role if none is specified)
+
+### User Fields
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | String | Required |
+| `email` | String | Required, unique, lowercased |
+| `password` | String | Required, min 6 chars, hashed with bcryptjs, never returned in queries by default |
+| `role` | String | Enum: admin, seller, buyer — defaults to buyer |
+| `phone` | String | Optional |
+| `createdAt` / `updatedAt` | Date | Auto-managed via Mongoose timestamps |
+
+### Routes Summary
+
+| Method | Route | Description |
+|---|---|---|
+| POST | `/signup` | Register a new user, returns a JWT token |
+| POST | `/login` | Authenticate an existing user, returns a JWT token |
+| GET | `/me` | Protected route — returns the logged-in user's data (requires a valid token) |
+
+### How Authentication Works
+
+- Passwords are hashed with `bcryptjs` before being saved — the plain password is never stored
+- On successful signup or login, a JWT is generated with the user's id and role, signed using `JWT_SECRET`, expiring in 7 days
+- Protected routes (like `/me`) use an `authMiddleware` that reads the token from the `Authorization: Bearer <token>` header, verifies it, and attaches the decoded user info to `req.user`
+
+### API Usage Examples (Postman)
+
+**Register a user** — `POST http://localhost:5000/signup`
+Body → raw JSON:
+```json
+{
+  "name": "Ahmed Ali",
+  "email": "ahmed@example.com",
+  "password": "password123",
+  "role": "seller",
+  "phone": "0100000000"
+}
+```
+Response includes a `token` — copy it for the next steps.
+
+**Login** — `POST http://localhost:5000/login`
+Body → raw JSON:
+```json
+{
+  "email": "ahmed@example.com",
+  "password": "password123"
+}
+```
+Returns a fresh `token` on success. Using a wrong password or unregistered email returns a 401 with an "Invalid email or password" message.
+
+**Access a protected route** — `GET http://localhost:5000/me`
+In Postman, go to the Authorization tab, choose type "Bearer Token", and paste in the token from signup/login. Without a valid token, this route returns a 401.
+
+Screenshots of the signup, login (success + failure), and protected-route requests are in the `/screenshots` folder.
