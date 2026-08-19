@@ -2,95 +2,7 @@
 
 Backend module for **PartLink**, an online marketplace connecting buyers and sellers of car spare parts in Egypt. Built with Node.js, Express, and MongoDB (Mongoose).
 
-PartLink is a web-based marketplace that connects buyers of car spare parts with sellers across Egypt. Buyers can search for spare parts by car make, model, year, and category, while sellers can list and manage their products. Administrators manage users, categories, and listings to ensure a secure and organized platform.
-
----
-
-## User Roles
-
-### Admin
-- Manage users
-- Approve or suspend sellers
-- Manage products and categories
-- View and manage all orders
-- Moderate listings
-
-### Seller
-- Create, edit, and delete product listings
-- Upload product images
-- Manage inventory
-- View and process customer orders
-
-### Buyer
-- Register and log in
-- Browse and search products
-- Add products to cart
-- Place orders
-- Track orders
-- Leave reviews and ratings
-
----
-
-## Features (Full Project Scope)
-
-### Authentication
-- Register
-- Login
-- Logout
-- Forgot Password
-- Email Verification
-
-### Authorization
-- Role-based access control
-- Admin Dashboard
-- Seller Dashboard
-- Buyer Dashboard
-- Protected routes
-
-### CRUD Operations
-- Products (Create, Read, Update, Delete)
-- Categories (Create, Read, Update, Delete)
-- Orders (Create, Read, Update, Cancel)
-- Users (Admin Management)
-- Reviews (Create, Read, Delete)
-
-### Image & File Upload
-- User profile images
-- Product images
-- Seller verification documents
-
----
-
-## Main Pages
-
-- Home Page
-- Login Page
-- Register Page
-- Product Listing Page
-- Product Details Page
-- Shopping Cart
-- Buyer Dashboard
-- Seller Dashboard
-- Admin Dashboard
-- Add/Edit Product Page
-- User Management Page
-- Category Management Page
-
----
-
-## UI Design
-
-Figma Design:
-[https://www.figma.com/design/xFvbtM7asvtV7tBJ2TKIOM/Untitled?node-id=1-3&t=fhcjtSXjdubA53Ei-1](https://www.figma.com/proto/xFvbtM7asvtV7tBJ2TKIOM/NTI-TASK-10?node-id=1-2&starting-point-node-id=1%3A2&t=I2dLUqWNGv51vTsI-1)
-
----
-
-## Backend Module Progress: Product (entity-module)
-
-This is the first backend module built toward the full project above, using Node.js, Express, and MongoDB (Mongoose).
-
-### Features Implemented
-
+## Features Implemented
 
 - Full CRUD for the `Product` entity (Create, Read all, Read one, Update, Delete)
 - **Image upload with Multer** — sellers can attach a product photo when creating or updating a product
@@ -223,12 +135,22 @@ Adds a `User` model plus signup/login routes with hashed passwords and JWT-based
 | POST | `/signup` | Register a new user, returns a JWT token |
 | POST | `/login` | Authenticate an existing user, returns a JWT token |
 | GET | `/me` | Protected route — returns the logged-in user's data (requires a valid token) |
+| GET | `/users/profile` | Protected route — same as `/me`, example of a named protected resource (requires a valid token) |
 
 ### How Authentication Works
 
 - Passwords are hashed with `bcryptjs` before being saved — the plain password is never stored
 - On successful signup or login, a JWT is generated with the user's id and role, signed using `JWT_SECRET`, expiring in 7 days
-- Protected routes (like `/me`) use an `authMiddleware` that reads the token from the `Authorization: Bearer <token>` header, verifies it, and attaches the decoded user info to `req.user`
+
+### Route Protection Middleware
+
+`middleware/authMiddleware.js` guards any route it's attached to (currently `/me` and `/users/profile`, as an example — apply it to any future route the same way):
+
+1. Reads the `Authorization` header off the incoming request
+2. Expects the format `Bearer <token>` and extracts just the token part
+3. Verifies the token using `jwt.verify()` and `JWT_SECRET` — rejects with a 401 if missing, invalid, or expired
+4. On success, attaches the decoded payload (`{ id, role }`) to `req.user` so the route handler knows who's calling and what role they have
+5. Calls `next()` to let the request continue to the actual route handler
 
 ### API Usage Examples (Postman)
 
@@ -255,7 +177,7 @@ Body → raw JSON:
 ```
 Returns a fresh `token` on success. Using a wrong password or unregistered email returns a 401 with an "Invalid email or password" message.
 
-**Access a protected route** — `GET http://localhost:5000/me`
-In Postman, go to the Authorization tab, choose type "Bearer Token", and paste in the token from signup/login. Without a valid token, this route returns a 401.
+**Access a protected route** — `GET http://localhost:5000/users/profile` (or `GET /me`, same behavior)
+In Postman, go to the Authorization tab, choose type "Bearer Token", and paste in the token from signup/login. The middleware verifies it and returns the logged-in user's data. Without a valid token (missing, malformed, or expired), this route returns a 401.
 
-Screenshots of the signup, login (success + failure), and protected-route requests are in the `/screenshots` folder.
+Screenshots of the signup, login (success + failure), and protected-route requests (with and without a token) are in the `/screenshots` folder.

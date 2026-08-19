@@ -6,7 +6,8 @@ const protect = require('../middleware/authMiddleware');
 router.post('/signup', signup);
 router.post('/login', login);
 
-// Protected route - requires a valid JWT to access, used to test the token
+// Protected routes - require a valid JWT to access, used to test the token
 router.get('/me', protect, getMe);
+router.get('/users/profile', protect, getMe);
 
 module.exports = router;
