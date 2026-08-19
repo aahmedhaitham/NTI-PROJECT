@@ -136,21 +136,33 @@ Adds a `User` model plus signup/login routes with hashed passwords and JWT-based
 | POST | `/login` | Authenticate an existing user, returns a JWT token |
 | GET | `/me` | Protected route — returns the logged-in user's data (requires a valid token) |
 | GET | `/users/profile` | Protected route — same as `/me`, example of a named protected resource (requires a valid token) |
+| GET | `/admin/dashboard` | Protected + authorized route — requires a valid token AND the `admin` role |
 
 ### How Authentication Works
 
 - Passwords are hashed with `bcryptjs` before being saved — the plain password is never stored
 - On successful signup or login, a JWT is generated with the user's id and role, signed using `JWT_SECRET`, expiring in 7 days
 
-### Route Protection Middleware
+### Route Protection Middleware (Authentication)
 
-`middleware/authMiddleware.js` guards any route it's attached to (currently `/me` and `/users/profile`, as an example — apply it to any future route the same way):
+`middleware/authMiddleware.js` exports `protect`, which guards any route it's attached to (currently `/me`, `/users/profile`, and `/admin/dashboard`):
 
 1. Reads the `Authorization` header off the incoming request
 2. Expects the format `Bearer <token>` and extracts just the token part
 3. Verifies the token using `jwt.verify()` and `JWT_SECRET` — rejects with a 401 if missing, invalid, or expired
 4. On success, attaches the decoded payload (`{ id, role }`) to `req.user` so the route handler knows who's calling and what role they have
 5. Calls `next()` to let the request continue to the actual route handler
+
+### Role-Based Access Middleware (Authorization)
+
+`middleware/authMiddleware.js` also exports `authorize(...allowedRoles)`, layered on top of `protect` for routes that need more than "just logged in" — e.g. `/admin/dashboard` requires the `admin` role specifically:
+
+1. Runs after `protect`, so `req.user` is already set
+2. Checks whether `req.user.role` is included in the list of roles allowed for that route
+3. If not, rejects with a 403 "Access denied: insufficient permissions"
+4. If allowed, calls `next()` to continue to the route handler
+
+Example: `router.get('/admin/dashboard', protect, authorize('admin'), handler)` — a buyer or seller token gets a 403 here, only an admin token succeeds.
 
 ### API Usage Examples (Postman)
 
@@ -179,5 +191,8 @@ Returns a fresh `token` on success. Using a wrong password or unregistered email
 
 **Access a protected route** — `GET http://localhost:5000/users/profile` (or `GET /me`, same behavior)
 In Postman, go to the Authorization tab, choose type "Bearer Token", and paste in the token from signup/login. The middleware verifies it and returns the logged-in user's data. Without a valid token (missing, malformed, or expired), this route returns a 401.
+
+**Access an admin-only route** — `GET http://localhost:5000/admin/dashboard`
+Same Bearer Token setup as above. If the token belongs to a user whose `role` is `admin`, you get a 200 with a welcome message. If the token belongs to a `buyer` or `seller`, you get a 403 "Access denied: insufficient permissions" — proving the role check works, not just the login check.
 
 Screenshots of the signup, login (success + failure), and protected-route requests (with and without a token) are in the `/screenshots` folder.
